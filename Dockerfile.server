@@ -1,0 +1,17 @@
+FROM golang:alpine
+WORKDIR /build
+
+# Copy source files
+COPY go-server go-server
+
+WORKDIR /build/go-server
+# Download go modules
+RUN go mod download
+
+RUN go build -o main main.go
+
+# Build apps
+WORKDIR /dist
+RUN cp /build/go-server/main .
+
+CMD ["/dist/main"]

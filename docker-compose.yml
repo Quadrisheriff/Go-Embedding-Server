@@ -1,0 +1,41 @@
+version: "3.7"
+
+services:
+  torchserve:
+    build:
+      context: ./
+      dockerfile: Dockerfile.pytorch
+    container_name: torchserve
+    ports:
+      - "8080:8080"
+      - "7070:7070"
+      - "8081:8081"
+  postgres:
+    hostname: postgres
+    image: ankane/pgvector
+    ports:
+      - 5432:5432
+    restart: always
+    environment:
+      - POSTGRES_DB=vectordb
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpassword
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+  go-server:
+    build:
+      context: ./
+      dockerfile: Dockerfile.server
+    ports:
+      - 8090:8090
+    depends_on:
+      - postgres
+      - torchserve
+    environment:
+      - HOST=postgres
+      - USER=testuser
+      - PASSWORD=testpassword
+      - DBNAME=vectordb
+      - PORT=:8090
+      - PYTORCH=torchserve:7070
